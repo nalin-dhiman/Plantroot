@@ -15,69 +15,8 @@ analysis-ready exports.
 
 ![ROOT-FPT Explorer showing a synthetic root, controls, metrics, and depth profile](assets/app_preview.png)
 
-## Install and run
 
-Python 3.11 or 3.12 is required. Use `python -m ...` commands so installation
-and Streamlit always use the same interpreter.
 
-```bash
-git clone https://github.com/nalin-dhiman/Plantroot.git
-cd Plantroot
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e ".[app]"
-python scripts/doctor.py
-python -m streamlit run streamlit_app.py
-```
-
-On Windows PowerShell, activate with:
-
-```powershell
-.venv\Scripts\Activate.ps1
-```
-
-The installation is complete only after pip reports a successful install.
-Dependency resolution may take a few minutes on a new machine.
-
-### If the repository already exists
-
-Do not clone over an existing directory. Update the existing checkout:
-
-```bash
-cd Plantroot
-git pull --ff-only
-source .venv/bin/activate
-python -m pip install -e ".[app]"
-python scripts/doctor.py
-python -m streamlit run streamlit_app.py
-```
-
-If `.venv` does not exist, create it using the clean-install commands above.
-
-### Fixing `ModuleNotFoundError: rootfpt`
-
-This usually means pip was interrupted or `streamlit` came from a different
-Python installation. Check the active tools:
-
-```bash
-which python
-python -m pip show rootfpt
-python -c "import rootfpt; print(rootfpt.__file__)"
-python -m streamlit version
-```
-
-Then rerun the installation without interrupting it:
-
-```bash
-python -m pip install -e ".[app]"
-python scripts/doctor.py
-python -m streamlit run streamlit_app.py
-```
-
-The app also resolves `src/rootfpt` directly when launched from a source
-checkout, but a complete installation is still recommended for reproducible
-work.
 
 ## What can be explored?
 
@@ -142,15 +81,7 @@ See [API.md](API.md) and [`tutorials/`](tutorials) for additional examples.
 - Parameters are not calibrated to a species, genotype, field site, or treatment.
 - Large ensembles belong in scripted workflows, not the shared web interface.
 
-## Development and verification
 
-```bash
-python -m pip install -e ".[dev]"
-python -m pytest -q
-ruff check .
-python scripts/check_public_release.py
-python scripts/render_readme_assets.py
-```
 
 Before a release, run the installation doctor, tests, lint, and public-release
 boundary check on a clean Python 3.11 or 3.12 environment. The repository is
