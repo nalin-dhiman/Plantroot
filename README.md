@@ -39,26 +39,6 @@ The app has four workspaces:
 Downloads contain settings, named seeds, metrics, the segment table, the
 root-length-density profile, and an exact segment-table SHA-256.
 
-## Python API
-
-```python
-from rootfpt.explorer import result_signature, run_experiment, segment_frame
-
-run = run_experiment(
-    "dimorphic",
-    "patchy_matern",
-    seed=20260802,
-    replicate=0,
-    duration_days=5.5,
-    dt_days=0.04,
-)
-
-print(run.metrics)
-print(result_signature(run))
-segments = segment_frame(run)
-```
-
-See [API.md](API.md) and [`tutorials/`](tutorials) for additional examples.
 
 ## Research-use checklist
 
