@@ -1,0 +1,4 @@
+atlas_config: ../atlas/root_soil_atlas.yaml
+architectures: all
+soil: patchy_matern
+replicate: 7

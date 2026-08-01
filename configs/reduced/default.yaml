@@ -1,0 +1,100 @@
+experiment:
+  name: reduced_equal_budget_validation
+  description: Synthetic reduced model with delayed lateral emergence and functional proxy
+  version: 1
+  replicates: 64
+  workers: 1
+
+random:
+  master_seed: 20260730
+  environment_seed: derived
+  development_seed: derived
+  sensor_seed: derived
+  observation_seed: derived
+
+domain:
+  dimension: 2
+  x_min: -1.2
+  x_max: 1.2
+  z_min: 0.0
+  z_max: 2.2
+  boundary_conditions: reflecting
+
+time:
+  dt: 0.04
+  t_max: 20.0
+  output_interval: 0.5
+
+root:
+  initial_position: [0.0, 0.02]
+  initial_orientation: 1.5707963267948966
+  elongation_speed: 0.14
+  rotational_diffusion: 0.12
+  gravitropism: 0.7
+  hydrotropism: 2.0
+  persistence_length: 0.58
+  radius: 0.03
+  radius_order_scale: 0.8
+  mortality_rate: 0.002
+  boundary_margin: 0.12
+  boundary_avoidance: 1.0
+  maximum_order: 2
+  maximum_tips: 80
+
+branching:
+  model: delayed_lateral_emergence
+  mean_spacing: 0.34
+  spacing_shape: 3.0
+  emergence_delay: 0.8
+  abortion_probability: 0.10
+  dormancy_probability: 0.05
+  daughter_angle_distribution: symmetric_normal
+  daughter_angle_mean: 0.70
+  daughter_angle_sd: 0.14
+  wet_side_bias: 0.0
+
+carbon:
+  initial_budget: 3.0
+  length_cost: 1.0
+  branch_initiation_cost: 0.04
+  maintenance_cost: 0.003
+  sensing_cost: 0.0005
+  exhaustion_policy: proportional_allocation
+
+environment:
+  model: transient_analytic_patches
+  scenario: patchy_transient
+  correlation_length: 0.3
+  patch_density: 0.5
+  patch_lifetime: 14.0
+  moisture_amplitude: 0.85
+  rainfall_process: deterministic_scenario_with_paired_jitter
+  evaporation_rate: 0.08
+  base_moisture: 0.05
+  depth_gradient: 0.07
+  position_jitter: 0.05
+  amplitude_jitter: 0.04
+  lifetime_scale: 1.0
+
+sensor:
+  policy: reactive
+  noise: 0.03
+  memory_time: 1.5
+  delay: 0.6
+  sensing_radius: 0.12
+
+success:
+  geometric_threshold: 0.25
+  functional_flow_threshold: 0.25
+  cumulative_resource_threshold: 0.01
+  resource_threshold: 0.15
+  deadline: 20.0
+  transport_speed: 0.5
+  resistance_scale: 0.0000001
+  search_tube_radius: 0.035
+
+numerics:
+  tolerance: 0.000000001
+  maximum_steps: 1000
+  checkpoint_interval: 100
+  coverage_resolution: 72

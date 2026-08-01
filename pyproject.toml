@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rootfpt"
+version = "1.0.1"
+description = "Synthetic stochastic root architecture experiments in heterogeneous soils"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+license = {text = "MIT"}
+authors = [{name = "ROOT-FPT contributors"}]
+keywords = ["root architecture", "stochastic simulation", "soil heterogeneity", "research software"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = [
+  "matplotlib==3.10.1",
+  "numpy==1.26.4",
+  "pandas==2.2.3",
+  "PyYAML==6.0.3",
+  "scipy==1.12.0",
+]
+
+[project.optional-dependencies]
+app = ["streamlit==1.56.0"]
+dev = [
+  "pytest==8.3.5",
+  "ruff==0.11.8",
+  "streamlit==1.56.0",
+]
+
+[project.urls]
+Repository = "https://github.com/nalin-dhiman/Plantroot"
+Issues = "https://github.com/nalin-dhiman/Plantroot/issues"
+
+[tool.setuptools.package-data]
+rootfpt = ["data/*.yaml"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/test_prototype.py" = ["E402"]
+"tests/test_theory_tools.py" = ["E402"]
+"workflows/*.py" = ["E402"]
+

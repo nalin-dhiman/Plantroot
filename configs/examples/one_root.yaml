@@ -1,0 +1,4 @@
+atlas_config: ../atlas/root_soil_atlas.yaml
+architecture: dimorphic
+soil: homogeneous
+replicate: 0

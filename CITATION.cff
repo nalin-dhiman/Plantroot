@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If this software supports your work, cite the archived software release and record the exact commit."
+title: "ROOT-FPT: synthetic root architecture experiments in heterogeneous soils"
+type: software
+authors:
+  - family-names: "Dhiman"
+    given-names: "Nalin"
+version: "1.0.1"
+date-released: "2026-08-01"
+repository-code: "https://github.com/nalin-dhiman/Plantroot"
+license: "MIT"
+abstract: "Reproducible software for controlled, synthetic stochastic root architecture and soil experiments."
+
