@@ -15,19 +15,19 @@ or accessibility are welcome.
 ## Local checks
 
 ```bash
-python -m pip install -r requirements-dev.txt
-pytest -q
+python -m pip install -e ".[dev]"
+python -m pytest -q
 ruff check .
 python scripts/check_public_release.py
+python scripts/doctor.py
 ```
 
 For Streamlit changes, also run:
 
 ```bash
-streamlit run streamlit_app.py
+python -m streamlit run streamlit_app.py
 ```
 
 Include the seed and exact settings for visual or stochastic defects. Avoid
 claims of biological realism unless they are supported by an explicit
 calibration and validation contribution.
-

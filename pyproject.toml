@@ -57,7 +57,7 @@ target-version = "py311"
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.ruff.lint.per-file-ignores]
+"streamlit_app.py" = ["E402"]
 "tests/test_prototype.py" = ["E402"]
 "tests/test_theory_tools.py" = ["E402"]
 "workflows/*.py" = ["E402"]
-

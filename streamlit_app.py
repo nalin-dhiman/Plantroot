@@ -3,12 +3,21 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
+
+# Streamlit executes this file as a script.  Make a source checkout runnable
+# even before an editable install has added ``src`` to the interpreter path.
+REPOSITORY_ROOT = Path(__file__).resolve().parent
+SOURCE_ROOT = REPOSITORY_ROOT / "src"
+if SOURCE_ROOT.is_dir() and str(SOURCE_ROOT) not in sys.path:
+    sys.path.insert(0, str(SOURCE_ROOT))
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
+from rootfpt import __version__
 from rootfpt.explorer import (
     labels,
     load_default_config,
@@ -453,7 +462,7 @@ with methods_tab:
             """
         )
     with image_column:
-        framework = Path("assets/model_framework.png")
+        framework = REPOSITORY_ROOT / "assets" / "model_framework.png"
         if framework.exists():
             st.image(
                 str(framework),
@@ -467,4 +476,6 @@ with methods_tab:
     )
 
 st.divider()
-st.caption("ROOT-FPT Explorer · MIT-licensed software · Synthetic outputs only")
+st.caption(
+    f"ROOT-FPT Explorer {__version__} · MIT-licensed software · Synthetic outputs only"
+)

@@ -1,3 +1,1 @@
--e .
-streamlit==1.56.0
-
+-e .[app]
