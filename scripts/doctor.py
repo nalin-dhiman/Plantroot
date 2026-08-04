@@ -21,12 +21,18 @@ def main() -> int:
         action="store_true",
         help="Check imports and interpreter only; skip the simulation smoke test.",
     )
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Also require an installed rootfpt distribution matching the source version.",
+    )
     arguments = parser.parse_args()
 
     print("ROOT-FPT installation doctor")
     print(f"Python: {sys.version.split()[0]}")
     print(f"Interpreter: {sys.executable}")
-    print(f"Virtual environment: {'yes' if sys.prefix != sys.base_prefix else 'no'}")
+    in_virtual_environment = sys.prefix != sys.base_prefix
+    print(f"Virtual environment: {'yes' if in_virtual_environment else 'no'}")
     if not ((3, 11) <= sys.version_info[:2] < (3, 13)):
         print("FAIL: ROOT-FPT supports Python 3.11 and 3.12.")
         return 1
@@ -44,10 +50,26 @@ def main() -> int:
     print(f"ROOT-FPT: {__version__}")
     print(f"Streamlit: {streamlit.__version__}")
     print(f"Source: {SOURCE_ROOT}")
+    installed_distribution = None
     try:
-        print(f"Installed distribution: rootfpt {version('rootfpt')}")
+        installed_distribution = version("rootfpt")
+        print(f"Installed distribution: rootfpt {installed_distribution}")
     except PackageNotFoundError:
         print("Warning: running from the source fallback; editable install not detected.")
+    if arguments.strict and installed_distribution is None:
+        print('FAIL: strict mode requires: python -m pip install -e ".[app]"')
+        return 1
+    if arguments.strict and installed_distribution != __version__:
+        print(
+            "FAIL: installed distribution and source checkout have different versions "
+            f"({installed_distribution!r} != {__version__!r})."
+        )
+        print('Run: python -m pip install -e ".[app]"')
+        return 1
+    for required_path in (REPOSITORY_ROOT / "streamlit_app.py", REPOSITORY_ROOT / "app/main.py"):
+        if not required_path.is_file():
+            print(f"FAIL: missing application file {required_path.relative_to(REPOSITORY_ROOT)}")
+            return 1
     if not arguments.quick:
         result = run_experiment(
             "taproot",

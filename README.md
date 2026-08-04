@@ -15,8 +15,82 @@ analysis-ready exports.
 
 ![ROOT-FPT Explorer showing a synthetic root, controls, metrics, and depth profile](assets/app_preview.png)
 
+## Install and run
 
+Python 3.11 or 3.12 is required. Use `python -m ...` commands so installation
+and Streamlit always use the same interpreter.
 
+```bash
+git clone https://github.com/nalin-dhiman/Plantroot.git
+cd Plantroot
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e ".[app]"
+python scripts/doctor.py --strict
+python -m streamlit run streamlit_app.py
+```
+
+On Windows PowerShell, activate with:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+The installation is complete only after pip reports a successful install.
+Dependency resolution may take a few minutes on a new machine.
+
+### If the repository already exists
+
+Do not clone over an existing directory. Update the existing checkout:
+
+```bash
+cd Plantroot
+git pull --ff-only
+source .venv/bin/activate
+python -m pip install -e ".[app]"
+python scripts/doctor.py --strict
+python -m streamlit run streamlit_app.py
+```
+
+If `.venv` does not exist, create it using the clean-install commands above.
+
+### Fixing `ModuleNotFoundError: rootfpt`
+
+This usually means pip was interrupted or `streamlit` came from a different
+Python installation. Check the active tools:
+
+```bash
+which python
+python -m pip show rootfpt
+python -c "import rootfpt; print(rootfpt.__file__)"
+python -m streamlit version
+```
+
+Then rerun the installation without interrupting it:
+
+```bash
+python -m pip install -e ".[app]"
+python scripts/doctor.py --strict
+python -m streamlit run streamlit_app.py
+```
+
+The app also resolves `src/rootfpt` directly when launched from a source
+checkout, but a complete installation is still recommended for reproducible
+work.
+
+### Streamlit Community Cloud
+
+Deploy `streamlit_app.py` from the repository root with Python 3.12. The small
+root file is a stable cloud entry point; the maintained interface lives in
+[`app/main.py`](app/main.py). Keep the app public if it is intended for open
+use. A URL that repeatedly redirects to Streamlit sign-in is not a healthy
+public deployment: verify app visibility in Community Cloud and reboot the app
+after changing it.
+
+GitHub pushes update an existing Community Cloud deployment automatically.
+The repository does not claim that a hosted instance is available until its
+public, unauthenticated URL has been verified.
 
 ## What can be explored?
 
@@ -61,7 +135,15 @@ root-length-density profile, and an exact segment-table SHA-256.
 - Parameters are not calibrated to a species, genotype, field site, or treatment.
 - Large ensembles belong in scripted workflows, not the shared web interface.
 
+## Development and verification
 
+```bash
+python -m pip install -e ".[dev]"
+python -m pytest -q
+ruff check .
+python scripts/check_public_release.py
+python scripts/render_readme_assets.py
+```
 
 Before a release, run the installation doctor, tests, lint, and public-release
 boundary check on a clean Python 3.11 or 3.12 environment. The repository is
@@ -73,6 +155,7 @@ URL.
 
 ```text
 streamlit_app.py          browser application
+app/                      Streamlit interface implementation
 src/rootfpt/              simulation, metrics, hydraulics, and app helpers
 configs/                  explicit synthetic presets and example selectors
 tests/                    analytical, stochastic, conservation, and UI tests

@@ -5,9 +5,8 @@ type: software
 authors:
   - family-names: "Dhiman"
     given-names: "Nalin"
-version: "1.0.1"
-date-released: "2026-08-01"
+version: "1.0.2"
+date-released: "2026-08-04"
 repository-code: "https://github.com/nalin-dhiman/Plantroot"
 license: "MIT"
 abstract: "Reproducible software for controlled, synthetic stochastic root architecture and soil experiments."
-
