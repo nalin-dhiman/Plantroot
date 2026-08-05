@@ -6,8 +6,7 @@ import json
 import sys
 from pathlib import Path
 
-# Streamlit executes this file as a script.  Make a source checkout runnable
-# even before an editable install has added ``src`` to the interpreter path.
+
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 SOURCE_ROOT = REPOSITORY_ROOT / "src"
 if SOURCE_ROOT.is_dir() and str(SOURCE_ROOT) not in sys.path:
