@@ -1,1 +1,2 @@
+# Streamlit Community Cloud must be deployed with Python 3.12; see README.md.
 -e .[app]

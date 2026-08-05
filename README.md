@@ -92,6 +92,20 @@ GitHub pushes update an existing Community Cloud deployment automatically.
 The repository does not claim that a hosted instance is available until its
 public, unauthenticated URL has been verified.
 
+If the deployment log reports Python 3.13 or newer, restarting the app is not
+enough. Community Cloud fixes the Python version when an app is created. Save
+any secrets, delete the existing deployment, and deploy it again with:
+
+- repository: `nalin-dhiman/Plantroot`
+- branch: `main`
+- entry point: `streamlit_app.py`
+- Advanced settings → Python version: `3.12`
+- sharing: public, if unrestricted access is intended
+
+The dependency pins are validated on Python 3.11–3.12. Do not work around an
+incorrect Cloud runtime by compiling old scientific packages on Python 3.14 or
+by upgrading the numerical stack without rerunning the verification suite.
+
 ## What can be explored?
 
 ![Six deterministic ROOT-FPT architecture presets grown in one controlled soil](assets/preset_gallery.png)
