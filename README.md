@@ -3,6 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-16865C.svg)](LICENSE)
 [![Python 3.11–3.12](https://img.shields.io/badge/python-3.11%E2%80%933.12-2563EB.svg)](pyproject.toml)
 [![Version 1.1.1](https://img.shields.io/badge/version-1.1.1-7C3AED.svg)](CITATION.cff)
+[![Testing app](https://img.shields.io/badge/testing-Open_Streamlit_app-FF4B4B.svg)](https://plantroot.streamlit.app/)
 
 ROOT-FPT is research software for reproducible experiments with stochastic
 root-tip motion, delayed branching, synthetic heterogeneous soils, explicit
