@@ -42,22 +42,11 @@ cd Plantroot
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -e ".[app]"
-python scripts/doctor.py --strict
+python -m pip install -e .
 ```
 
 On Windows PowerShell, activate the environment with
 `.venv\Scripts\Activate.ps1`.
-
-Start the application with the same Python interpreter used for installation:
-
-```bash
-python -m streamlit run streamlit_app.py
-```
-
-If `rootfpt` cannot be imported, the installation was incomplete or Streamlit
-is using another interpreter. Activate `.venv`, repeat the editable install,
-and launch Streamlit with `python -m streamlit`.
 
 ## Using the explorer
 
@@ -144,13 +133,11 @@ tutorials/            small executable examples
 workflows/            scripted research workflows
 scripts/              installation, verification, and software-asset tools
 assets/               software-facing images used in this README
-docs/                 deployment and operational documentation
 ```
 
 Additional documentation:
 
 - [API guide](API.md)
-- [Streamlit deployment](docs/deployment.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)
 - [Issue tracker](https://github.com/nalin-dhiman/Plantroot/issues)
