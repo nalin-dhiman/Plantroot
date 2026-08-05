@@ -117,7 +117,9 @@ about real taxa or optimal root systems.
 The app has four workspaces:
 
 - **Explore:** grow one deterministic-by-seed architecture, inspect its graph
-  and depth profile, and download metrics and segments.
+  and depth profile, and download metrics and segments. The atlas window runs
+  to 5.5 days; a guarded extended preview supports 7, 14, 21, or 30 days on a
+  shared month-scale soil domain.
 - **Paired comparison:** compare two presets against identical synthetic soil
   realizations. Interactive samples are intentionally small and exploratory.
 - **Diagnostics:** compare 0.04-day and 0.02-day integrations and inspect
@@ -147,6 +149,8 @@ root-length-density profile, and an exact segment-table SHA-256.
 - The reduced soil-water assay is not Richards flow.
 - Terminal hydraulic analysis does not feed water uptake back into development.
 - Parameters are not calibrated to a species, genotype, field site, or treatment.
+- Extended previews extrapolate the short-window rules; they do not introduce
+  root ageing, turnover, seasonal forcing, or dynamic carbon limitation.
 - Large ensembles belong in scripted workflows, not the shared web interface.
 
 ## Development and verification

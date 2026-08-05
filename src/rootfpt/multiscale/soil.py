@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 
 import numpy as np
 from scipy.ndimage import gaussian_filter
@@ -122,6 +122,12 @@ class SoilState:
     oxygen: np.ndarray
     correlation_length: float
     description: str
+    _gradient_cache: dict[str, tuple[np.ndarray, np.ndarray]] = field(
+        default_factory=dict,
+        init=False,
+        repr=False,
+        compare=False,
+    )
 
     def __post_init__(self) -> None:
         target = (self.grid.nz, self.grid.nx)
@@ -321,10 +327,7 @@ class SoilState:
             np.clip(iz, 0.0, self.grid.nz - 1.000001),
         )
 
-    def sample(self, name: str, positions: np.ndarray) -> np.ndarray:
-        if name not in FIELD_UNITS:
-            raise KeyError(f"unknown soil field {name!r}")
-        values = np.asarray(getattr(self, name))
+    def _sample_values(self, values: np.ndarray, positions: np.ndarray) -> np.ndarray:
         ix, iz = self._fractional_indices(positions)
         x0, z0 = np.floor(ix).astype(int), np.floor(iz).astype(int)
         x1 = np.minimum(x0 + 1, self.grid.nx - 1)
@@ -337,13 +340,21 @@ class SoilState:
             + tx * tz * values[z1, x1]
         )
 
+    def sample(self, name: str, positions: np.ndarray) -> np.ndarray:
+        if name not in FIELD_UNITS:
+            raise KeyError(f"unknown soil field {name!r}")
+        return self._sample_values(np.asarray(getattr(self, name)), positions)
+
     def gradient(self, name: str, positions: np.ndarray) -> np.ndarray:
-        values = np.asarray(getattr(self, name))
-        derivative_z, derivative_x = np.gradient(values, self.grid.dz, self.grid.dx)
-        copy = replace(self, **{name: derivative_x})
-        grad_x = copy.sample(name, positions)
-        copy = replace(self, **{name: derivative_z})
-        grad_z = copy.sample(name, positions)
+        if name not in FIELD_UNITS:
+            raise KeyError(f"unknown soil field {name!r}")
+        if name not in self._gradient_cache:
+            values = np.asarray(getattr(self, name))
+            derivative_z, derivative_x = np.gradient(values, self.grid.dz, self.grid.dx)
+            self._gradient_cache[name] = (derivative_x, derivative_z)
+        derivative_x, derivative_z = self._gradient_cache[name]
+        grad_x = self._sample_values(derivative_x, positions)
+        grad_z = self._sample_values(derivative_z, positions)
         return np.stack((grad_x, grad_z), axis=-1)
 
     def anisotropy_tensor(self, positions: np.ndarray) -> np.ndarray:

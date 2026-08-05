@@ -19,6 +19,8 @@ import streamlit as st
 
 from rootfpt import __version__
 from rootfpt.explorer import (
+    ATLAS_DURATION_DAYS,
+    MAX_EXPLORER_DURATION_DAYS,
     labels,
     load_default_config,
     relative_change,
@@ -72,7 +74,7 @@ st.markdown(
 )
 
 
-@st.cache_data(show_spinner=False, ttl=1800, max_entries=24)
+@st.cache_data(show_spinner=False, ttl=1800, max_entries=6)
 def cached_experiment(
     architecture: str,
     soil: str,
@@ -145,24 +147,72 @@ with st.sidebar:
             )
         )
         replicate = int(st.number_input("Replicate index", 0, 9999, 0, 1))
-        duration = float(st.slider("Duration (days)", 1.0, 5.5, 5.5, 0.5))
-        resolution = st.radio(
-            "Time resolution",
-            ("Standard · 0.04 d", "Fine · 0.02 d"),
-            horizontal=False,
-            help="Fine mode approximately doubles integration work.",
+        horizon = st.radio(
+            "Development horizon",
+            (
+                f"Atlas window · up to {ATLAS_DURATION_DAYS:g} d",
+                f"Extended preview · up to {MAX_EXPLORER_DURATION_DAYS:g} d",
+            ),
+            help=(
+                "Extended runs enlarge the synthetic soil domain but extrapolate "
+                "the short-window model without adding ageing or turnover."
+            ),
         )
-        dt = 0.02 if resolution.startswith("Fine") else 0.04
-        max_tips = int(
-            st.slider(
-                "Maximum active-tip allocation",
-                40,
-                160,
-                120,
-                10,
-                help="A computational guardrail, not a biological carrying capacity.",
+        extended_horizon = horizon.startswith("Extended")
+        if extended_horizon:
+            duration = float(
+                st.select_slider(
+                    "Duration (days)",
+                    options=(7, 14, 21, 30),
+                    value=14,
+                    format_func=lambda value: (
+                        "30 days · about 1 month" if value == 30 else f"{value} days"
+                    ),
+                    key="extended_duration",
+                )
             )
-        )
+            dt = 0.04
+            st.caption("Extended previews use the 0.04-day integration step.")
+            max_tips = int(
+                st.slider(
+                    "Maximum total-tip allocation",
+                    40,
+                    60,
+                    60,
+                    10,
+                    key="extended_tip_cap",
+                    help="Capped at 60 to protect the shared application worker.",
+                )
+            )
+        else:
+            duration = float(
+                st.slider(
+                    "Duration (days)",
+                    1.0,
+                    ATLAS_DURATION_DAYS,
+                    ATLAS_DURATION_DAYS,
+                    0.5,
+                    key="atlas_duration",
+                )
+            )
+            resolution = st.radio(
+                "Time resolution",
+                ("Standard · 0.04 d", "Fine · 0.02 d"),
+                horizontal=False,
+                help="Fine mode approximately doubles integration work.",
+            )
+            dt = 0.02 if resolution.startswith("Fine") else 0.04
+            max_tips = int(
+                st.slider(
+                    "Maximum total-tip allocation",
+                    40,
+                    160,
+                    120,
+                    10,
+                    key="atlas_tip_cap",
+                    help="A computational guardrail, not a biological carrying capacity.",
+                )
+            )
         run_clicked = st.form_submit_button("Grow this root", type="primary", width="stretch")
 
     if "active_parameters" not in st.session_state:
@@ -192,6 +242,15 @@ with st.sidebar:
     )
 
 parameters = st.session_state.active_parameters
+extended_run = parameters["duration"] > ATLAS_DURATION_DAYS
+if extended_run:
+    st.warning(
+        "Extended preview: all extended horizons use one enlarged month-scale soil "
+        "canvas, but switching from the atlas window starts a new expanded-domain run; "
+        "it does not continue the displayed 5.5-day root. The same short-window growth "
+        "rates are extrapolated without root ageing, turnover, seasonal forcing, or "
+        "dynamic carbon feedback, so this is not a validated month-scale prediction."
+    )
 with st.spinner("Integrating root development and terminal hydraulics…"):
     result = cached_experiment(**parameters)
 
@@ -236,6 +295,17 @@ with explore_tab:
             st.warning(
                 "This exploratory run exceeded the shared construction-accounting reference."
             )
+        if result.metrics["tip_allocation_reached"]:
+            st.warning(
+                "The total-tip allocation was reached. Later potential branches were "
+                "not allocated, so this architecture is computationally truncated."
+            )
+        if result.metrics["boundary_contact_count"]:
+            st.warning(
+                f"{int(result.metrics['boundary_contact_count'])} tip(s) reached the "
+                "synthetic soil boundary and stopped. Interpret size-dependent metrics "
+                "with that truncation in mind."
+            )
 
         rld_figure = root_length_density_figure(result)
         st.pyplot(rld_figure, width="stretch")
@@ -274,6 +344,11 @@ with compare_tab:
         "Two presets share each soil realization at a given replicate index. "
         "This controls environmental randomness, but a small interactive sample is exploratory."
     )
+    if extended_run:
+        st.info(
+            "Paired ensembles are limited to the 5.5-day atlas window in the shared "
+            "web app. Use the Python workflow for long-horizon ensembles."
+        )
     with st.form("comparison_controls"):
         control_columns = st.columns(4)
         architecture_a = control_columns[0].selectbox(
@@ -286,7 +361,10 @@ with compare_tab:
             "Shared soil", soil_keys, index=1, format_func=soil_labels.get
         )
         comparison_count = int(control_columns[3].slider("Paired replicates", 3, 8, 5))
-        compare_clicked = st.form_submit_button("Run paired comparison")
+        compare_clicked = st.form_submit_button(
+            "Run paired comparison",
+            disabled=extended_run,
+        )
 
     if compare_clicked:
         if architecture_a == architecture_b:
@@ -357,7 +435,13 @@ with diagnostics_tab:
         "event-keyed randomness and the same resolved Brownian path. A single run "
         "is a smoke test, not a global convergence proof."
     )
-    if st.button("Run resolution check", key="resolution_check"):
+    if extended_run:
+        st.info(
+            "Interactive 0.04/0.02-day resolution checks are limited to the 5.5-day "
+            "atlas window because a month-scale paired solve is too costly for the "
+            "shared worker."
+        )
+    if st.button("Run resolution check", key="resolution_check", disabled=extended_run):
         with st.spinner("Running coupled coarse and fine integrations…"):
             coarse = cached_experiment(
                 parameters["architecture"],
@@ -458,6 +542,8 @@ with methods_tab:
               back into development.
             - No species calibration, parameter inference, rhizosphere
               resolution, or field validation.
+            - Extended previews enlarge the domain but do not add ageing,
+              turnover, seasonal forcing, or dynamic carbon limitation.
             - Presets should not be ranked as biologically superior from these outputs.
             """
         )

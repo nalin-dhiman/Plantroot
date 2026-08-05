@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import heapq
 import math
 from dataclasses import dataclass
 from enum import StrEnum
@@ -340,15 +341,25 @@ def simulate_architecture(
     ]
     tip_paths: dict[int, list[int]] = {0: [0]}
     next_tip_id = 1
+    scheduled_sites: list[tuple[float, int]] = []
+    due_site_ids: list[int] = []
 
     def emerge_due_sites(step_end: float) -> None:
         nonlocal next_tip_id
-        for site in sites:
-            if (
-                site.status != SiteStatus.POTENTIAL
-                or site.emergence_time > step_end + 1e-12
-                or len(tips) >= max_tips
-            ):
+        # ``tips`` retains every allocated tip, including inactive tips. Once
+        # this cap is reached no site can ever allocate another tip, so scanning
+        # the growing site list is a pure (and, for long runs, very expensive)
+        # no-op.
+        if len(tips) >= max_tips:
+            return
+        while scheduled_sites and scheduled_sites[0][0] <= step_end + 1e-12:
+            _, site_id = heapq.heappop(scheduled_sites)
+            heapq.heappush(due_site_ids, site_id)
+        while due_site_ids:
+            if len(tips) >= max_tips:
+                return
+            site = sites[heapq.heappop(due_site_ids)]
+            if site.status != SiteStatus.POTENTIAL:
                 continue
             local = site.position[None, :]
             water = float(soil.sample("water", local)[0])
@@ -554,20 +565,20 @@ def simulate_architecture(
                         if root_type.developmental_delay_mean > 0
                         else 0.0
                     )
-                    sites.append(
-                        PotentialSite(
-                            site_id,
-                            tip.tip_id,
-                            part_end_node,
-                            part_end.copy(),
-                            site_angle,
-                            tip.order,
-                            tip.root_type,
-                            created_time,
-                            created_time + delay,
-                            -1.0 if keyed.uniform(41, site_id) < 0.5 else 1.0,
-                        )
+                    site = PotentialSite(
+                        site_id,
+                        tip.tip_id,
+                        part_end_node,
+                        part_end.copy(),
+                        site_angle,
+                        tip.order,
+                        tip.root_type,
+                        created_time,
+                        created_time + delay,
+                        -1.0 if keyed.uniform(41, site_id) < 0.5 else 1.0,
                     )
+                    sites.append(site)
+                    heapq.heappush(scheduled_sites, (site.emergence_time, site_id))
                     created_site = True
                 part_start = part_end
                 part_start_node = part_end_node

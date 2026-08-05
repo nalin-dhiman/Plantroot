@@ -106,7 +106,19 @@ def architecture_figure(
         linewidth=0.8,
         zorder=6,
     )
-    axis.set(xlim=(x0, x1), ylim=(z1, z0), xlabel="Horizontal position (cm)", ylabel="Depth (cm)")
+    view_x0, view_x1, view_z1 = x0, x1, z1
+    if float(result.settings.get("domain_scale", 1.0)) > 1.0:
+        root_x = result.architecture.nodes[:, 0]
+        horizontal_padding = max(1.0, 0.08 * float(np.ptp(root_x)))
+        view_x0 = max(x0, float(np.min(root_x)) - horizontal_padding)
+        view_x1 = min(x1, float(np.max(root_x)) + horizontal_padding)
+        view_z1 = min(z1, float(result.depth_bins[-1]))
+    axis.set(
+        xlim=(view_x0, view_x1),
+        ylim=(view_z1, z0),
+        xlabel="Horizontal position (cm)",
+        ylabel="Depth (cm)",
+    )
     axis.set_title(f"{architecture_label} in {soil_label}", pad=13, fontweight="bold")
     axis.grid(color="white", linewidth=0.7, alpha=0.45)
     colorbar = figure.colorbar(image, ax=axis, location="right", fraction=0.045, pad=0.035)

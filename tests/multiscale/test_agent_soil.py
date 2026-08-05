@@ -65,3 +65,7 @@ def test_bilinear_gradient_recovers_linear_field() -> None:
     positions = np.array([[0.0, 2.0], [0.4, 1.5], [-0.7, 2.8]])
     gradient = soil.gradient("nutrient", positions)
     np.testing.assert_allclose(gradient, np.array([[2.0, -3.0]] * 3), atol=1e-10)
+    cached_arrays = soil._gradient_cache["nutrient"]
+    repeated = soil.gradient("nutrient", positions)
+    assert soil._gradient_cache["nutrient"] is cached_arrays
+    np.testing.assert_array_equal(repeated, gradient)

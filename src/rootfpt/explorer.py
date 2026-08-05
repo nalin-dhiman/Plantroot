@@ -11,6 +11,7 @@ import copy
 import hashlib
 import io
 import json
+import math
 import zipfile
 from dataclasses import dataclass, replace
 from importlib import resources
@@ -30,6 +31,9 @@ from rootfpt.multiscale.architecture import (
 from rootfpt.multiscale.soil import Grid2D, SoilState
 from rootfpt.multiscale.water import hydraulic_architecture_solution
 
+ATLAS_DURATION_DAYS = 5.5
+MAX_EXPLORER_DURATION_DAYS = 30.0
+
 
 @dataclass(frozen=True)
 class ExperimentResult:
@@ -44,7 +48,7 @@ class ExperimentResult:
     root_length_density: np.ndarray
     depth_bins: np.ndarray
     seeds: dict[str, int]
-    settings: dict[str, float | int]
+    settings: dict[str, float | int | list[float]]
 
 
 def load_default_config() -> dict:
@@ -72,6 +76,25 @@ def _build_grid(config: dict) -> Grid2D:
         tuple(settings["domain_x_cm"]),
         tuple(settings["domain_z_cm"]),
     )
+
+
+def _configure_explorer_domain(settings: dict, duration_days: float) -> float:
+    """Use a shared month-scale domain while retaining atlas grid spacing.
+
+    The frozen atlas window is unchanged. Every extended horizon uses the same
+    expanded grid so seed-matched 7-, 14-, 21-, and 30-day runs share one soil
+    realization instead of regenerating it at a different array size.
+    """
+    if duration_days <= ATLAS_DURATION_DAYS:
+        return 1.0
+    scale = MAX_EXPLORER_DURATION_DAYS / ATLAS_DURATION_DAYS
+    settings["domain_x_cm"] = [float(value) * scale for value in settings["domain_x_cm"]]
+    settings["domain_z_cm"] = [float(value) * scale for value in settings["domain_z_cm"]]
+    settings["grid_cells"] = int(math.ceil(float(settings["grid_cells"]) * scale))
+    settings["root_length_depth_bins_cm"] = [
+        float(value) * scale for value in settings["root_length_depth_bins_cm"]
+    ]
+    return scale
 
 
 def _soil_from_config(name: str, grid: Grid2D, rng: np.random.Generator) -> SoilState:
@@ -192,6 +215,25 @@ def _mechanical_arrest_proxy(architecture: Architecture, soil: SoilState) -> flo
     return float(np.mean(failed[high_impedance]))
 
 
+def _boundary_contact_count(architecture: Architecture, soil: SoilState) -> int:
+    """Count tips whose last recorded node lies on the rectangular boundary."""
+    x0, x1 = soil.grid.x_limits
+    z0, z1 = soil.grid.z_limits
+    count = 0
+    for path in architecture.tip_paths.values():
+        if len(path) < 2:
+            continue
+        x, z = architecture.nodes[path[-1]]
+        if (
+            np.isclose(x, x0, atol=1e-9)
+            or np.isclose(x, x1, atol=1e-9)
+            or np.isclose(z, z0, atol=1e-9)
+            or np.isclose(z, z1, atol=1e-9)
+        ):
+            count += 1
+    return count
+
+
 def _metrics(
     architecture: Architecture,
     soil: SoilState,
@@ -200,6 +242,13 @@ def _metrics(
     settings = config["simulation"]
     base = architecture.metrics()
     bins = np.asarray(settings["root_length_depth_bins_cm"], dtype=float)
+    if float(settings["duration_days"]) > ATLAS_DURATION_DAYS:
+        occupied_depth = float(np.max(architecture.nodes[:, 1]))
+        profile_depth = min(
+            float(soil.grid.z_limits[1]),
+            max(12.0, 1.1 * occupied_depth),
+        )
+        bins = np.linspace(0.0, profile_depth, len(bins))
     density = architecture.root_length_density_by_depth(bins)
     hydraulic = config["hydraulics"]
     solution = hydraulic_architecture_solution(
@@ -238,6 +287,11 @@ def _metrics(
             "construction_budget_exceeded": int(carbon_cost > initial_carbon),
             "kirchhoff_residual": solution.relative_kirchhoff_residual,
             "segment_count": len(architecture.segments),
+            "allocated_tip_count": len(architecture.tip_paths),
+            "tip_allocation_reached": int(
+                len(architecture.tip_paths) >= int(settings["max_tips"])
+            ),
+            "boundary_contact_count": _boundary_contact_count(architecture, soil),
         },
         density,
         bins,
@@ -262,8 +316,10 @@ def run_experiment(
     """
     if seed < 0 or replicate < 0:
         raise ValueError("seed and replicate must be non-negative")
-    if not 0.25 <= duration_days <= 5.5:
-        raise ValueError("duration_days must lie between 0.25 and 5.5")
+    if not 0.25 <= duration_days <= MAX_EXPLORER_DURATION_DAYS:
+        raise ValueError(
+            f"duration_days must lie between 0.25 and {MAX_EXPLORER_DURATION_DAYS:g}"
+        )
     if dt_days not in {0.02, 0.04, 0.08}:
         raise ValueError("dt_days must be one of 0.02, 0.04, or 0.08")
     if not 10 <= max_tips <= 160:
@@ -279,6 +335,7 @@ def run_experiment(
     settings["duration_days"] = float(duration_days)
     settings["dt_days"] = float(dt_days)
     settings["max_tips"] = int(max_tips)
+    domain_scale = _configure_explorer_domain(settings, duration_days)
 
     architecture_index = list(config["root_regimes"]).index(architecture_name)
     soil_index = list(config["soils"]).index(soil_name)
@@ -324,6 +381,10 @@ def run_experiment(
             "duration_days": float(duration_days),
             "dt_days": float(dt_days),
             "max_tips": int(max_tips),
+            "domain_scale": float(domain_scale),
+            "domain_x_cm": [float(value) for value in settings["domain_x_cm"]],
+            "domain_z_cm": [float(value) for value in settings["domain_z_cm"]],
+            "grid_cells": int(settings["grid_cells"]),
         },
     )
 
