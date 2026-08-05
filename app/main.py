@@ -6,7 +6,6 @@ import json
 import sys
 from pathlib import Path
 
-
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 SOURCE_ROOT = REPOSITORY_ROOT / "src"
 if SOURCE_ROOT.is_dir() and str(SOURCE_ROOT) not in sys.path:
@@ -16,10 +15,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
+import rootfpt.explorer as explorer_api
 from rootfpt import __version__
 from rootfpt.explorer import (
-    ATLAS_DURATION_DAYS,
-    MAX_EXPLORER_DURATION_DAYS,
     labels,
     load_default_config,
     relative_change,
@@ -31,6 +29,11 @@ from rootfpt.visualization.explorer import (
     architecture_figure,
     comparison_figure,
     root_length_density_figure,
+)
+
+ATLAS_DURATION_DAYS = float(getattr(explorer_api, "ATLAS_DURATION_DAYS", 5.5))
+MAX_EXPLORER_DURATION_DAYS = float(
+    getattr(explorer_api, "MAX_EXPLORER_DURATION_DAYS", ATLAS_DURATION_DAYS)
 )
 
 st.set_page_config(
@@ -146,12 +149,14 @@ with st.sidebar:
             )
         )
         replicate = int(st.number_input("Replicate index", 0, 9999, 0, 1))
+        horizon_options = [f"Atlas window · up to {ATLAS_DURATION_DAYS:g} d"]
+        if MAX_EXPLORER_DURATION_DAYS > ATLAS_DURATION_DAYS:
+            horizon_options.append(
+                f"Extended preview · up to {MAX_EXPLORER_DURATION_DAYS:g} d"
+            )
         horizon = st.radio(
             "Development horizon",
-            (
-                f"Atlas window · up to {ATLAS_DURATION_DAYS:g} d",
-                f"Extended preview · up to {MAX_EXPLORER_DURATION_DAYS:g} d",
-            ),
+            horizon_options,
             help=(
                 "Extended runs enlarge the synthetic soil domain but extrapolate "
                 "the short-window model without adding ageing or turnover."
@@ -294,12 +299,12 @@ with explore_tab:
             st.warning(
                 "This exploratory run exceeded the shared construction-accounting reference."
             )
-        if result.metrics["tip_allocation_reached"]:
+        if result.metrics.get("tip_allocation_reached", 0):
             st.warning(
                 "The total-tip allocation was reached. Later potential branches were "
                 "not allocated, so this architecture is computationally truncated."
             )
-        if result.metrics["boundary_contact_count"]:
+        if result.metrics.get("boundary_contact_count", 0):
             st.warning(
                 f"{int(result.metrics['boundary_contact_count'])} tip(s) reached the "
                 "synthetic soil boundary and stopped. Interpret size-dependent metrics "
@@ -562,5 +567,6 @@ with methods_tab:
 
 st.divider()
 st.caption(
-    f"ROOT-FPT Explorer {__version__} · MIT-licensed software · Synthetic outputs only"
+    f"ROOT-FPT Explorer {__version__} · © 2026 Nalin Dhiman, IIT Mandi · "
+    "MIT-licensed · Synthetic outputs only"
 )

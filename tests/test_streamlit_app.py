@@ -2,12 +2,15 @@ from pathlib import Path
 
 from streamlit.testing.v1 import AppTest
 
+import rootfpt.explorer as explorer_api
+
 
 def test_streamlit_app_starts_without_exception() -> None:
     app = Path(__file__).resolve().parents[1] / "streamlit_app.py"
     test = AppTest.from_file(str(app), default_timeout=30).run()
     assert not test.exception
     assert len(test.tabs) == 4
+    assert any("Nalin Dhiman, IIT Mandi" in caption.value for caption in test.caption)
 
     rerun = test.run()
     assert not rerun.exception
@@ -35,3 +38,19 @@ def test_extended_preview_runs_with_shared_worker_guardrails() -> None:
         if button.label in {"Run paired comparison", "Run resolution check"}
     }
     assert guarded == {"Run paired comparison": True, "Run resolution check": True}
+
+
+def test_app_survives_a_hot_reload_missing_new_duration_constants() -> None:
+    app = Path(__file__).resolve().parents[1] / "streamlit_app.py"
+    names = ("ATLAS_DURATION_DAYS", "MAX_EXPLORER_DURATION_DAYS")
+    original = {name: getattr(explorer_api, name) for name in names}
+    try:
+        for name in names:
+            delattr(explorer_api, name)
+        test = AppTest.from_file(str(app), default_timeout=30).run()
+    finally:
+        for name, value in original.items():
+            setattr(explorer_api, name, value)
+
+    assert not test.exception
+    assert test.radio[0].options == ["Atlas window · up to 5.5 d"]

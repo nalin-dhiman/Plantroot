@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rootfpt"
-version = "1.1.0"
+version = "1.1.1"
 description = "Synthetic stochastic root architecture experiments in heterogeneous soils"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
