@@ -1,24 +1,40 @@
-# ROOT-FPT Explorer
+# ROOT-FPT
 
-[![license: MIT](https://img.shields.io/badge/license-MIT-16865C.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-16865C.svg)](LICENSE)
 [![Python 3.11–3.12](https://img.shields.io/badge/python-3.11%E2%80%933.12-2563EB.svg)](pyproject.toml)
+[![Version 1.1.1](https://img.shields.io/badge/version-1.1.1-7C3AED.svg)](CITATION.cff)
 
-ROOT-FPT is open research software for controlled experiments with persistent
-stochastic root-tip motion, delayed branching, synthetic heterogeneous soils,
-explicit root graphs, and terminal hydraulic analysis. The Streamlit explorer
-runs single realizations, small paired comparisons, numerical smoke tests, and
-analysis-ready exports.
+ROOT-FPT is research software for reproducible experiments with stochastic
+root-tip motion, delayed branching, synthetic heterogeneous soils, explicit
+root graphs, and terminal hydraulic analysis. It provides a Python package,
+scripted workflows, and an interactive Streamlit application.
 
-> **Scientific boundary:** this is a two-dimensional, synthetic, uncalibrated
-> model. Preset names are parameter combinations, not species. Outputs are not
-> field predictions, biological validation, or management advice.
+> **Scientific scope:** ROOT-FPT is a two-dimensional, synthetic, uncalibrated
+> model. Presets are parameter configurations rather than plant species.
+> Results are not field predictions, biological validation, or management
+> recommendations.
 
 ![ROOT-FPT Explorer showing a synthetic root, controls, metrics, and depth profile](assets/app_preview.png)
 
-## Install and run
+## Capabilities
 
-Python 3.11 or 3.12 is required. Use `python -m ...` commands so installation
-and Streamlit always use the same interpreter.
+- Persistent stochastic tip growth with gravity, water, mechanical, and
+  anisotropic soil responses.
+- Developmentally delayed lateral emergence and explicit branching topology.
+- Homogeneous, correlated, layered, deep-water, compacted, and cracked soil
+  constructors.
+- Geometry, depth-distribution, construction-accounting, and terminal
+  hydraulic metrics.
+- Deterministic named seeds for exact reruns and paired-environment
+  comparisons.
+- CSV, JSON, and ZIP exports with a SHA-256 signature for the ordered segment
+  table.
+
+![Six deterministic ROOT-FPT architecture presets in one controlled soil](assets/preset_gallery.png)
+
+## Installation
+
+ROOT-FPT supports Python 3.11 and 3.12.
 
 ```bash
 git clone https://github.com/nalin-dhiman/Plantroot.git
@@ -28,170 +44,123 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -e ".[app]"
 python scripts/doctor.py --strict
+```
+
+On Windows PowerShell, activate the environment with
+`.venv\Scripts\Activate.ps1`.
+
+Start the application with the same Python interpreter used for installation:
+
+```bash
 python -m streamlit run streamlit_app.py
 ```
 
-On Windows PowerShell, activate with:
+If `rootfpt` cannot be imported, the installation was incomplete or Streamlit
+is using another interpreter. Activate `.venv`, repeat the editable install,
+and launch Streamlit with `python -m streamlit`.
 
-```powershell
-.venv\Scripts\Activate.ps1
+## Using the explorer
+
+The application provides four workspaces:
+
+- **Explore** runs one reproducible root–soil realization and exports its graph
+  and metrics.
+- **Paired comparison** evaluates two architecture presets in identical
+  synthetic soil realizations.
+- **Diagnostics** compares 0.04-day and 0.02-day integrations and reports
+  conservation residuals.
+- **Model & limits** documents represented mechanisms and exclusions.
+
+The standard development window is 1–5.5 days. A guarded extended preview
+supports 7, 14, 21, and 30 days on a shared larger soil domain. Extended runs
+are extrapolations of the short-window rules; they do not add root ageing,
+turnover, seasonal forcing, or dynamic carbon limitation. The web interface
+therefore limits long runs to 60 allocated tips and reports computational
+truncation explicitly.
+
+## Python example
+
+```python
+from rootfpt.explorer import result_signature, run_experiment
+
+result = run_experiment(
+    "dimorphic",
+    "patchy_matern",
+    seed=20260802,
+    replicate=0,
+    duration_days=5.5,
+    dt_days=0.04,
+)
+
+print(result.metrics)
+print(result_signature(result))
 ```
 
-The installation is complete only after pip reports a successful install.
-Dependency resolution may take a few minutes on a new machine.
+See the [API guide](API.md) and executable [tutorials](tutorials) for the
+lower-level model components and paired workflows.
 
-### If the repository already exists
+## Reproducible research
 
-Do not clone over an existing directory. Update the existing checkout:
+For every analysis, record the software version or Git commit, configuration,
+master seed, replicate index, duration, integration step, and allocation cap.
+Use paired environment seeds for architecture comparisons and ensembles for
+uncertainty. A single visually selected realization is not representative.
 
-```bash
-cd Plantroot
-git pull --ff-only
-source .venv/bin/activate
-python -m pip install -e ".[app]"
-python scripts/doctor.py --strict
-python -m streamlit run streamlit_app.py
-```
+The 5.5-day reference window has explicit resolution and conservation checks.
+Longer previews should be treated as exploratory until their additional
+biological mechanisms and numerical behavior are separately validated.
 
-If `.venv` does not exist, create it using the clean-install commands above.
-
-### Fixing `ModuleNotFoundError: rootfpt`
-
-This usually means pip was interrupted or `streamlit` came from a different
-Python installation. Check the active tools:
-
-```bash
-which python
-python -m pip show rootfpt
-python -c "import rootfpt; print(rootfpt.__file__)"
-python -m streamlit version
-```
-
-Then rerun the installation without interrupting it:
-
-```bash
-python -m pip install -e ".[app]"
-python scripts/doctor.py --strict
-python -m streamlit run streamlit_app.py
-```
-
-The app also resolves `src/rootfpt` directly when launched from a source
-checkout, but a complete installation is still recommended for reproducible
-work.
-
-### Streamlit Community Cloud
-
-Deploy `streamlit_app.py` from the repository root with Python 3.12. The small
-root file is a stable cloud entry point; the maintained interface lives in
-[`app/main.py`](app/main.py). Keep the app public if it is intended for open
-use. A URL that repeatedly redirects to Streamlit sign-in is not a healthy
-public deployment: verify app visibility in Community Cloud and reboot the app
-after changing it.
-
-GitHub pushes update an existing Community Cloud deployment automatically.
-The repository does not claim that a hosted instance is available until its
-public, unauthenticated URL has been verified.
-
-If the deployment log reports Python 3.13 or newer, restarting the app is not
-enough. Community Cloud fixes the Python version when an app is created. Save
-any secrets, delete the existing deployment, and deploy it again with:
-
-- repository: `nalin-dhiman/Plantroot`
-- branch: `main`
-- entry point: `streamlit_app.py`
-- Advanced settings → Python version: `3.12`
-- sharing: public, if unrestricted access is intended
-
-The dependency pins are validated on Python 3.11–3.12. Do not work around an
-incorrect Cloud runtime by compiling old scientific packages on Python 3.14 or
-by upgrading the numerical stack without rerunning the verification suite.
-
-## What can be explored?
-
-![Six deterministic ROOT-FPT architecture presets grown in one controlled soil](assets/preset_gallery.png)
-
-The presets above use the same simulator, domain, duration, and homogeneous
-soil constructor. They are deliberately contrasting configurations—not claims
-about real taxa or optimal root systems.
-
-The app has four workspaces:
-
-- **Explore:** grow one deterministic-by-seed architecture, inspect its graph
-  and depth profile, and download metrics and segments. The atlas window runs
-  to 5.5 days; a guarded extended preview supports 7, 14, 21, or 30 days on a
-  shared month-scale soil domain.
-- **Paired comparison:** compare two presets against identical synthetic soil
-  realizations. Interactive samples are intentionally small and exploratory.
-- **Diagnostics:** compare 0.04-day and 0.02-day integrations and inspect
-  hydraulic and construction-accounting residuals.
-- **Model & limits:** see which mechanisms are represented and which are not.
-
-Downloads contain settings, named seeds, metrics, the segment table, the
-root-length-density profile, and an exact segment-table SHA-256.
-
-
-## Research-use checklist
-
-- Record the repository commit, Python version, configuration, seed, and
-  replicate index.
-- Use paired environment seeds when comparing architecture presets.
-- Use ensembles for uncertainty; a visually interesting realization is not a
-  representative sample.
-- Check numerical resolution for conclusions sensitive to event timing.
-- Retain failures and define exclusions before running an experiment.
-- Treat hydraulic and construction outputs as model indices unless separately
-  calibrated and validated.
-
-## Known limitations
+## Limitations
 
 - Root development is represented in two spatial dimensions.
-- Soil constructors are controlled inputs rather than empirical profiles.
-- The reduced soil-water assay is not Richards flow.
-- Terminal hydraulic analysis does not feed water uptake back into development.
-- Parameters are not calibrated to a species, genotype, field site, or treatment.
-- Extended previews extrapolate the short-window rules; they do not introduce
-  root ageing, turnover, seasonal forcing, or dynamic carbon limitation.
-- Large ensembles belong in scripted workflows, not the shared web interface.
+- Soil fields are controlled synthetic inputs, not measured profiles.
+- The reduced water assay is not a Richards-equation solver.
+- Terminal hydraulics does not feed water uptake back into development.
+- Parameters are not calibrated to a species, genotype, site, or treatment.
+- Root ageing, turnover, seasonal forcing, and dynamic carbon limitation are
+  not represented.
 
-## Development and verification
+## Development
 
 ```bash
 python -m pip install -e ".[dev]"
 python -m pytest -q
 ruff check .
 python scripts/check_public_release.py
-python scripts/render_readme_assets.py
 ```
 
-Before a release, run the installation doctor, tests, lint, and public-release
-boundary check on a clean Python 3.11 or 3.12 environment. The repository is
-ready for Streamlit Community Cloud, but deployment requires authorization
-from the repository owner; this README does not advertise an unverified hosted
-URL.
+Changes to equations, units, stochastic coupling, or output schemas should
+include focused tests and preserve deterministic results unless a numerical
+correction is intentional and documented. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Repository layout
+## Repository structure
 
 ```text
-streamlit_app.py          browser application
-app/                      Streamlit interface implementation
-src/rootfpt/              simulation, metrics, hydraulics, and app helpers
-configs/                  explicit synthetic presets and example selectors
-tests/                    analytical, stochastic, conservation, and UI tests
-tutorials/                small executable examples
-workflows/                command-line research workflows
-scripts/                  installation, release, and documentation checks
-assets/                   reproducible software-facing README images
+app/                  Streamlit interface and deployment bootstrap
+src/rootfpt/          simulation, analysis, hydraulics, and visualization
+configs/              explicit synthetic experiment configurations
+tests/                unit, analytical, stochastic, conservation, and UI tests
+tutorials/            small executable examples
+workflows/            scripted research workflows
+scripts/              installation, verification, and software-asset tools
+assets/               software-facing images used in this README
+docs/                 deployment and operational documentation
 ```
 
-This public repository contains software and software-facing documentation
-only. Research-writing and submission materials remain outside its release
-boundary.
+Additional documentation:
 
-## Contributing, support, and citation
+- [API guide](API.md)
+- [Streamlit deployment](docs/deployment.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
+- [Issue tracker](https://github.com/nalin-dhiman/Plantroot/issues)
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Report
-reproducible defects through [GitHub Issues](https://github.com/nalin-dhiman/Plantroot/issues)
-with the seed, settings, platform, Python version, and commit hash.
+## Citation and license
 
-The software is available under the [MIT License](LICENSE). Citation metadata
-is provided in [CITATION.cff](CITATION.cff).
+Citation metadata is provided in [CITATION.cff](CITATION.cff). For
+reproducible use, cite the archived software release when available and record
+the exact Git commit used for the analysis.
+
+ROOT-FPT is released under the [MIT License](LICENSE).
+
+© 2026 Nalin Dhiman, IIT Mandi
